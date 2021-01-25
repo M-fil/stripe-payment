@@ -1,0 +1,23 @@
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 20px;
+  padding: 20px 0;
+
+  &__user-email {
+    font-size: 18px !important;
+    font-weight: bold !important;
+  }
+}
+
+@media screen and (max-width: 425px) {
+  .main-header {
+    flex-direction: column;
+
+    &__user-data {
+      margin-bottom: 15px;
+    }
+  }
+}

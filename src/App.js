@@ -1,25 +1,44 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useMemo, useState } from 'react';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 
-function App() {
+import { EnvConfig } from './core/constants/config';
+import ProductsPage from './pages/products';
+import AuthPage from './pages/auth';
+import { useAuth } from './core/hooks/useAuth';
+import { GlobalContext } from './core/context/global';
+import Loader from './core/components/loader';
+import Header from './core/components/header';
+
+const stripe = loadStripe(EnvConfig.REACT_APP_STRIPE_PUBLIC_KEY);
+
+const App = () => {
+  const {
+    isAuthenticated, isLoading, user, customerId: id,
+  } = useAuth();
+  const [customerId, setCustomerId] = useState('');
+  const contextValue = useMemo(() => ({
+    isAuthenticated,
+    customerId: id || customerId,
+    setCustomerId,
+    user,
+  }), [isAuthenticated, customerId, setCustomerId, user, id]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <GlobalContext.Provider value={contextValue}>
+      {isLoading && <Loader />}
+      <Elements stripe={stripe}>
+        {isAuthenticated ? (
+          <main className="main-container">
+            <Header userEmail={user?.email || ''} />
+            <ProductsPage />
+          </main>
+        ) : (
+          <AuthPage />
+        )}
+      </Elements>
+    </GlobalContext.Provider>
   );
-}
+};
 
 export default App;
