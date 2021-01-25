@@ -73,3 +73,12 @@ export const getAllSubscriptionsForCustomer = async (customerId) => {
 
   return data;
 };
+
+export const unsubscribeFromStripeSubscription = async (subscriptionId) => {
+  await fetch(`${StripeQueryUrls.SUBSCRIPTIONS}/${subscriptionId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${EnvConfig.REACT_APP_STRIPE_SECRET_KEY}`,
+    },
+  });
+};

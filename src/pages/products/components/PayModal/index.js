@@ -27,6 +27,16 @@ const PayModal = ({
     () => (oneTimePrice?.numberValue * 100) || (subscriptionPrice?.numberValue * 100),
     [oneTimePrice, subscriptionPrice],
   );
+  const isCustomerSubscribed = useMemo(
+    () => (selectedProduct && selectedProduct?.subPlans.length > 0),
+    [selectedProduct],
+  );
+
+  const hideMessageComponent = useCallback(() => {
+    setTimeout(() => {
+      setMessage({ text: '', type: '' });
+    }, 4000);
+  }, []);
 
   const handlePayment = useCallback((type) => async (token) => {
     try {
@@ -58,13 +68,12 @@ const PayModal = ({
         type: 'error',
       });
     }
-
-    setTimeout(() => {
-      setMessage({ text: '', type: '' });
-    }, 4000);
+    hideMessageComponent();
+    closeModal();
   }, [
     convertedPrice, selectedProduct, globalContext?.customerId,
-    oneTimePrice, subscriptionPrice, updateProducts,
+    oneTimePrice, subscriptionPrice, updateProducts, hideMessageComponent,
+    closeModal,
   ]);
 
   const renderPaymentForm = useCallback((type) => {
@@ -99,6 +108,30 @@ const PayModal = ({
     selectedProduct?.name, globalContext.user?.email,
   ]);
 
+  const unsubscribeFromSubscription = useCallback(() => {
+    if (selectedProduct?.subPlans) {
+      const subscriptionId = selectedProduct?.subPlans[0].id;
+      PaymentService.unsubscribeFromStripeSubscription(subscriptionId)
+        .then(() => {
+          setMessage({
+            text: 'You was successfully unsubscribed!',
+            type: 'success',
+          });
+        })
+        .catch(() => {
+          setMessage({
+            text: 'Error! Error ocurred in the unsubscribe process.',
+            type: 'error',
+          });
+        })
+        .finally(() => {
+          hideMessageComponent();
+          updateProducts();
+          closeModal();
+        });
+    }
+  }, [selectedProduct?.subPlans, hideMessageComponent, updateProducts, closeModal]);
+
   return (
     <>
       <Toast
@@ -123,7 +156,18 @@ const PayModal = ({
           )}
           <div>
             {oneTimePrice && renderPaymentForm('one_time')}
-            {subscriptionPrice && renderPaymentForm('recurring')}
+            {isCustomerSubscribed
+              ? (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  style={styles.payButton}
+                  onClick={unsubscribeFromSubscription}
+                >
+                  {`Unsubscribe from ${subscriptionPrice?.value} per ${subscriptionPrice?.interval}`}
+                </Button>
+              )
+              : subscriptionPrice && renderPaymentForm('recurring')}
           </div>
         </div>
       </Modal>
@@ -142,6 +186,14 @@ PayModal.propTypes = {
       value: PropTypes.string.isRequired,
       numberValue: PropTypes.number.isRequired,
       type: PropTypes.string.isRequired,
+      interval: PropTypes.string,
+      currency: PropTypes.string.isRequired,
+    })),
+    subPlans: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      priceId: PropTypes.string.isRequired,
+      value: PropTypes.string.isRequired,
+      numberValue: PropTypes.number.isRequired,
       interval: PropTypes.string,
       currency: PropTypes.string.isRequired,
     })),
