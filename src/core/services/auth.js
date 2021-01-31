@@ -1,28 +1,36 @@
-import { firebaseServices } from '../firebase';
 import * as CustomerServices from './customers';
 
-const { auth } = firebaseServices;
-const USER_ALREADY_EXISTS_CODE = 'auth/email-already-in-use';
+export const LOCAL_STORAGE_USER_EMAIL = 'LOCALHOST_USER_EMAIL';
 
-export const signUpUser = async (email, password) => {
+export const setUserEmail = (email) => {
+  localStorage.setItem(LOCAL_STORAGE_USER_EMAIL, email);
+};
+
+export const getUserEmail = () => localStorage.getItem(LOCAL_STORAGE_USER_EMAIL) || '';
+
+export const removeUserEmail = () => localStorage.removeItem(LOCAL_STORAGE_USER_EMAIL);
+
+export const signUpUser = async (email) => {
   try {
-    await auth.createUserWithEmailAndPassword(email, password);
-    await CustomerServices.createCustomer(email);
-    const id = await CustomerServices.getCustomerIdByEmail(email);
-
-    return { id };
-  } catch (error) {
-    if (error.code === USER_ALREADY_EXISTS_CODE) {
-      await auth.signInWithEmailAndPassword(email, password);
-      const id = await CustomerServices.getCustomerIdByEmail(email);
-
-      return { id };
+    const user = await CustomerServices.getCustomersByEmail(email);
+    if (!user || (user && user.data.length === 0)) {
+      throw new Error();
     }
 
-    return { error };
+    setUserEmail(email);
+    return { user: user.data[0] };
+  } catch (error) {
+    if (error.message) {
+      return { error };
+    }
+
+    await CustomerServices.createCustomer(email);
+    const user = await CustomerServices.getCustomersByEmail(email);
+    setUserEmail(email);
+    return { user: user.data[0] };
   }
 };
 
 export const logOutUser = async () => {
-  await auth.signOut();
+  removeUserEmail();
 };

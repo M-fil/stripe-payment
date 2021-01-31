@@ -1,14 +1,20 @@
 import './style.scss';
-import React, { useCallback } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { Typography, Button } from '@material-ui/core';
 import PropTypes from 'prop-types';
 
 import * as AuthService from '../../services/auth';
+import { GlobalContext } from '../../context/global';
 
 const Header = ({ userEmail }) => {
+  const globalContext = useContext(GlobalContext);
+
   const onLogOutUser = useCallback(() => {
     AuthService.logOutUser();
-  }, []);
+    globalContext.setIsLoggedIn(false);
+    globalContext.setCustomerId('');
+    window.location.reload();
+  }, [globalContext]);
 
   return (
     <header className="main-header">

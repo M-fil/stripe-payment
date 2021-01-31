@@ -16,9 +16,11 @@ const App = () => {
   const {
     isAuthenticated, isLoading, user, customerId: id,
   } = useAuth();
+  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated);
   const [customerId, setCustomerId] = useState('');
   const contextValue = useMemo(() => ({
-    isAuthenticated,
+    isAuthenticated: isLoggedIn,
+    setIsLoggedIn,
     customerId: id || customerId,
     setCustomerId,
     user,

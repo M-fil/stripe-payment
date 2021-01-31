@@ -14,7 +14,6 @@ const AuthPage = () => {
   const isLaptopScreen = useMediaQuery({ query: '(max-width: 720px)' });
   const [formValues, setFormValues] = useState({
     email: '',
-    password: '',
   });
   const [errorMessage, setErrorMessage] = useState('');
   const globalContext = useContext(GlobalContext);
@@ -30,18 +29,24 @@ const AuthPage = () => {
   const onSignUpCustomer = useCallback(async (event) => {
     event.preventDefault();
 
-    AuthServices.signUpUser(formValues.email, formValues.password)
+    AuthServices.signUpUser(formValues.email)
       .then((data) => {
         if (data?.error) {
           showErrorMessage(data?.error?.message || '');
+          globalContext.setIsLoggedIn(false);
         } else {
           setErrorMessage('');
-          const customerId = data.id;
+          const customerId = data.user.id;
           globalContext.setCustomerId(customerId);
+          globalContext.setIsLoggedIn(true);
         }
       })
       .catch((error) => {
         showErrorMessage(error.message);
+        globalContext.setIsLoggedIn(false);
+      })
+      .finally(() => {
+        window.location.reload();
       });
   }, [formValues, showErrorMessage]);
 
@@ -68,13 +73,6 @@ const AuthPage = () => {
           type="text"
           style={currentStyles.emailField}
           onChange={onFormValueChange('email')}
-          withSpacing
-        />
-        <FormFiled
-          id="password"
-          label="Enter password"
-          type="password"
-          onChange={onFormValueChange('password')}
           withSpacing
         />
         <Button
